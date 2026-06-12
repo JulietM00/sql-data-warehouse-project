@@ -15,6 +15,9 @@ The views integrate data from the 'silver' schema, which contains cleaned and tr
 
 
 -- Create dimension: gold.dim_customers 
+IF OBJECT_ID('gold.dim_customers', 'V') IS NOT NULL
+ DROP VIEW gold.dim_customers;
+GO
 CREATE VIEW gold.dim_customers AS 
 SELECT 
 ROW_NUMBER() OVER (ORDER BY cst_id) AS customer_key,
@@ -34,7 +37,8 @@ LEFT JOIN silver.erp_cust_az12 ca
 ON ci.cst_key = ca.cid
 LEFT JOIN silver.erp_loc_a101 cl
 ON ci.cst_key = cl.cid
-
+ 
+GO
   
 -- Create dimension: gold.dim_products
 CREATE VIEW gold.dim_products AS
@@ -55,7 +59,7 @@ LEFT JOIN silver.erp_px_cat_g1v2 pc
 ON pn.cat_id = pc.id
 WHERE prd_end_dt IS NULL --Filter ot all historical data
 
-
+GO
 
 -- Create fact table: gold.fact_sales
 CREATE VIEW gold.fact_sales AS
@@ -74,3 +78,5 @@ LEFT JOIN gold.dim_products pr
 ON sd.sls_prd_key = pr.product_number
 LEFT JOIN gold.dim_customers c
 ON sd.sls_cust_id = c.customer_id  
+
+GO
