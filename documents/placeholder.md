@@ -1,6 +1,6 @@
 # Data Dictionary for the Gold Layer
 # Overview
-The Gold Layer is a business_level data representation, structured to support analytical and reporting use cases. It consists of 'dimension tables' and 'fact tables' for specific business metircs.
+The Gold Layer is a business-level data representation, structured to support analytical and reporting use cases. It consists of 'dimension tables' and 'fact tables' for specific business metircs.
 
 ## 2. gold.dim_customers
 - Purpose: Stores customer details with demographic and geagraphic data.
@@ -48,47 +48,10 @@ The Gold Layer is a business_level data representation, structured to support an
 | order number | NVARCHAR(50) | Unique alphanumeric identifier for each sales order (e.g. 'SO208516'). |
 | product_key | INT | Surrogate key linking order to the product dimension table. |
 | customer_key | INT | Surrogate key linking order to the customer dimension table. |
-|
+| order_date | DATE | Date when the order date was placed, stored in the system. |
+| shipment_date | DATE | Date when the order was/is shipped to the customer. |
+| due_date | DATE | Date when the order payment is due. |
+| sales_amount | INT | Total monetary value of the sale fir the line product/item, in currency unit (e.g. 34). |
+| quantity | Number of products in units ordered for the line (e.g. 2). |
+| price | Price per unit of the product ordered for the line item, in currency units (e.g. 325).
 ## Column Descriptions
-
-| Column Name | Data Type | Description |
-|---|---|---|
-| `product_id` | INT | Unique surrogate identifier for each product record. Primary key of this table. | 
-| `product_number` | VARCHAR(50) | The original product number sourced from the CRM system. Used to trace back to source systems. | 
-| `product_name` | VARCHAR(50) | Full descriptive name of the product. Cleaned and trimmed from source data. | 
-| `category_id` | VARCHAR(50) | Identifier for the product category. Derived by extracting and transforming the first segment of the original product key. | 
-| `category` | VARCHAR(50) | High level grouping of the product. Sourced from the ERP product category table. | 
-| `subcategory` | VARCHAR(50) | More granular grouping under the main category. Sourced from the ERP product category table. | 
-| `maintainance` | VARCHAR(50) | Indicates whether the product requires maintenance. Sourced from ERP system. | 
-| `cost` | DECIMAL | The standard cost of the product. Null values have been defaulted to 0 during silver layer cleaning. | 
-| `product_line` | VARCHAR(50) | The product line the product belongs to. Standardized from single character codes during silver layer transformation. |
-| `start_date` | DATE | The date the product became active. Derived from the product start date in the source system. |
-
----
-
-## Notes
-
-- This table is built in the **gold layer** and should not be modified directly.
-- All transformations and cleaning are handled in the **silver layer** stored procedures.
-- `category_id` is derived from the first 5 characters of the original `prd_key` column in the bronze layer, with hyphens replaced by underscores.
-- `product_line` values are standardized from raw codes: `M` → `Mountain`, `R` → `Road`, `S` → `Standard`, anything else → `N/A`.
-- `cost` null values are defaulted to `0` to avoid calculation errors in reporting.
-- `start_date` reflects the product activation date and is used alongside historical records to track product changes over time.
-
----
-
-## Relationships
-
-| Related Table | Join Key | Relationship |
-|---|---|---|
-| `gold.fact_sales` | `product_id` | One-to-Many |
-| `gold.dim_categories` | `category_id` | Many-to-One |
-
----
-
-## Source Tables
-
-| Layer | Table Name |
-|---|---|
-| Bronze | `bronze.crm_prd_info` |
-| Silver | `silver.crm_prd_info` |
