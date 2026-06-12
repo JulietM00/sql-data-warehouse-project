@@ -1,9 +1,12 @@
 # Data Dictionary for the Gold Layer
-# Overview
-The Gold Layer is a business-level data representation, structured to support analytical and reporting use cases. It consists of 'dimension tables' and 'fact tables' for specific business metircs.
 
-## 2. gold.dim_customers
-- Purpose: Stores customer details with demographic and geagraphic data.
+# Overview
+The Gold Layer is the business-level data representation of the data warehouse, structured to support analytical and reporting use cases. It consists of dimension tables and fact tables that model specific business metrics.
+
+All data in the Gold Layer has been cleaned, transformed, and enriched through the Bronze and Silver layers before arriving here. This layer is the primary source for dashboards, reports, and business intelligence tools.
+
+## [1. gold.dim_customers](scripts/gold)
+- Purpose: Stores customer details with demographic and geographic data.
 - Columns:
 
 | Column Name | Data Type | Description |
@@ -18,11 +21,14 @@ The Gold Layer is a business-level data representation, structured to support an
 | gender| NVARCHAR(50) | Gender of the customer (e.g. 'Male', 'Female', 'N/A'). |
 | birthdate | DATE | Date of birth of the customer as YYYY-MM-DD (1974-04-15). |
 |create_date | DATE | Date when the customer record was created in the system. |
-
+## Notes
+- marital_status is derived from raw codes: S → Single, M → Married, anything else → N/A.
+- gender is derived from raw codes: F → Female, M → Male, anything else → N/A.
+- Duplicate customer records are handled using ROW_NUMBER() in the silver layer, keeping the most recent record per customer_id.
 ---
-## 1. gold.dim_products
+## [2. gold.dim_products](scripts/gold)
 
-- Purpose: Provides information about the products their attributes
+- Purpose: Provides information about products and their attributes.
 - Columns:
 
 | Column Name | Data Type | Description |
@@ -37,10 +43,13 @@ The Gold Layer is a business-level data representation, structured to support an
 | cost | INT | Cost of the product, measure in monetary units. |
 | product_line | NVARCHAR(50) | Specific product line to which the product belongs to (e.g. 'Road', 'Mountain', 'Standard'). |
 | start_date | DATE | Date when the product became available for sale or use, stored in the system. |
-
+## Notes 
+- category_id is derived by extracting the first 5 characters of the original prd_key and replacing hyphens with underscores.
+- product_line is standardized from raw codes: M → Mountain, R → Road, S → Standard, anything else → N/A.
+- cost null values are defaulted to 0 to avoid calculation errors in reporting.
 ---
-## 3. gold.fact_sales
-- Purpose: Store transactional sales data analytical purposes.
+## [3. gold.fact_sales](scripts/gold)
+- Purpose: Stores transactional sales data for analytical purposes. Central fact table in the star schema, linked to both the customer and product dimension tables via surrogate keys.
 - Columns:
 
 |Column Name | Data Type | Description |
@@ -51,7 +60,9 @@ The Gold Layer is a business-level data representation, structured to support an
 | order_date | DATE | Date when the order date was placed, stored in the system. |
 | shipment_date | DATE | Date when the order was/is shipped to the customer. |
 | due_date | DATE | Date when the order payment is due. |
-| sales_amount | INT | Total monetary value of the sale fir the line product/item, in currency unit (e.g. 34). |
+| sales_amount | INT | Total monetary value of the sale for the line product/item, in currency unit (e.g. 34). |
 | quantity | Number of products in units ordered for the line (e.g. 2). |
-| price | Price per unit of the product ordered for the line item, in currency units (e.g. 325).
-## Column Descriptions
+| price | Price per unit of the product ordered for the line item, in currency units (e.g. 325). |
+## Notes
+- order_date is validated to ensure it is never greater than due_date. Invalid dates are set to NULL.
+- product_key and customer_key are surrogate keys generated in the gold layer and must always reference valid records in gold.dim_products and gold.dim_customers respectively.
